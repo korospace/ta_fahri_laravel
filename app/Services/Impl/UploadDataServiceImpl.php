@@ -359,4 +359,38 @@ class UploadDataServiceImpl implements UploadDataService
             throw new GeneralException($th->getMessage(), 500);
         }
     }
+
+    public function generateCentralityMeasure($jsonData)
+    {
+        try {
+            $graph = buildAdjacencyList($jsonData['nodes'], $jsonData['edges']);
+
+            // Calculate centrality measures
+            $degreeCentrality       = calculateDegreeCentrality($graph);
+            $betweennessCentrality  = calculateBetweennessCentrality($jsonData['nodes'], $jsonData['edges'], $graph);
+            $closenessCentrality    = calculateClosenessCentrality($graph);
+            $eigenvectorCentrality  = calculateEigenvectorCentrality($graph);
+
+            // Combine results
+            $result = [
+                'degree_centrality'         => $degreeCentrality,
+                'betweenness_centrality'    => $betweennessCentrality,
+                'closeness_centrality'      => $closenessCentrality,
+                'eigenvector_centrality'    => $eigenvectorCentrality,
+            ];
+
+            // save json
+            $folder   = "data"; // folder: database/data
+            $fileName = "result.json";
+            $filePath = database_path($folder . '/' . $fileName);
+
+            if (!File::exists(database_path($folder))) {
+                File::makeDirectory(database_path($folder), 0755, true);
+            }
+
+            File::put($filePath, json_encode($result, JSON_PRETTY_PRINT));
+        } catch (\Throwable $th) {
+            throw new GeneralException($th->getMessage(), 500);
+        }
+    }
 }

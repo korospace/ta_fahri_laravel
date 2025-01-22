@@ -46,7 +46,8 @@
             "database/seeds"
         ],
         "files": [
-            "app/Helpers/Helper.php"
+            "app/Helpers/Helper.php",
+            "app/Helpers/CentralityMeasure.php"
         ]
     },
     "autoload-dev": {
