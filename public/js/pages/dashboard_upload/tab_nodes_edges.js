@@ -56,42 +56,43 @@ function fetchNodesEdges() {
 function showVisualization(jsonNodesEdges) {
     Promise.all([
         jsonNodesEdges,
-        null, // Jika ada data lain, tambahkan di sini.
+        null,
     ]).then(function ([rawGraph, centrality]) {
-        // Transform data JSON ke format yang sesuai
         const graph = {
-            nodes: rawGraph.nodes.map((node) => ({ id: node })),
+            nodes: rawGraph.nodes.map((node) => ({ id: node, degree: 0 })),
             edges: rawGraph.edges.map(([source, target]) => ({ source, target })),
         };
+
+        // Hitung derajat untuk setiap node
+        graph.edges.forEach((edge) => {
+            const sourceNode = graph.nodes.find((node) => node.id === edge.source);
+            const targetNode = graph.nodes.find((node) => node.id === edge.target);
+            if (sourceNode) sourceNode.degree += 1;
+            if (targetNode) targetNode.degree += 1;
+        });
 
         const width = 1600;
         const height = 800;
 
-        // Create SVG element for the graph
         const svg = d3
             .select("#graph-container")
             .append("svg")
             .attr("width", width)
-            .attr("height", height);
+            .attr("height", height)
+            .call(d3.zoom().on("zoom", (event) => {
+                svgGroup.attr("transform", event.transform);
+            }));
 
-        // Set up force simulation
+        const svgGroup = svg.append("g");
+
         const simulation = d3
             .forceSimulation(graph.nodes)
-            .force(
-                "link",
-                d3
-                    .forceLink(graph.edges)
-                    .id((d) => d.id)
-                    .distance(100)
-            )
-            .force("charge", d3.forceManyBody().strength(-300))
+            .force("link", d3.forceLink(graph.edges).id((d) => d.id).distance(150))
+            .force("charge", d3.forceManyBody().strength(-500))
             .force("center", d3.forceCenter(width / 2, height / 2))
-            .force("x", d3.forceX().strength(0.1))
-            .force("y", d3.forceY().strength(0.1))
             .on("tick", ticked);
 
-        // Add links
-        const link = svg
+        const link = svgGroup
             .append("g")
             .attr("class", "edges")
             .selectAll("line")
@@ -103,8 +104,7 @@ function showVisualization(jsonNodesEdges) {
             .style("stroke-opacity", 0.6)
             .style("stroke-width", 1);
 
-        // Add nodes
-        const node = svg
+        const node = svgGroup
             .append("g")
             .attr("class", "nodes")
             .selectAll("circle")
@@ -113,13 +113,12 @@ function showVisualization(jsonNodesEdges) {
             .append("circle")
             .attr("class", "node")
             .attr("r", 5)
+            .style("fill", "steelblue")
             .on("mouseover", function (event, d) {
                 d3.select(this).attr("r", 8);
-                d3.select(`#label-${d.id}`).style("visibility", "visible");
             })
             .on("mouseout", function (event, d) {
                 d3.select(this).attr("r", 5);
-                d3.select(`#label-${d.id}`).style("visibility", "hidden");
             })
             .call(
                 d3
@@ -129,35 +128,33 @@ function showVisualization(jsonNodesEdges) {
                     .on("end", dragended)
             );
 
-        // Add labels with links
-        const label = svg
+        // Add labels with dynamic font size based on degree
+        const label = svgGroup
             .append("g")
             .attr("class", "labels")
             .selectAll("text")
             .data(graph.nodes)
             .enter()
-            .append("a")
-            .attr("xlink:href", (d) => `https://www.instagram.com/${d.id}/`)
-            .attr("target", "_blank")
             .append("text")
             .attr("class", "label")
-            .attr("id", (d) => `label-${d.id}`)
+            .style("font-size", (d) => `${Math.max(10, d.degree + 5)}px`) // Font size based on degree
+            .style("fill", "#555")
+            .attr("text-anchor", "middle")
+            .attr("dy", -10) // Position above the node
             .text((d) => d.id);
 
         function ticked() {
             link
-                .attr("x1", (d) => Math.max(0, Math.min(width, d.source.x)))
-                .attr("y1", (d) => Math.max(0, Math.min(height, d.source.y)))
-                .attr("x2", (d) => Math.max(0, Math.min(width, d.target.x)))
-                .attr("y2", (d) => Math.max(0, Math.min(height, d.target.y)));
+                .attr("x1", (d) => d.source.x)
+                .attr("y1", (d) => d.source.y)
+                .attr("x2", (d) => d.target.x)
+                .attr("y2", (d) => d.target.y);
 
-            node
-                .attr("cx", (d) => Math.max(0, Math.min(width, d.x)))
-                .attr("cy", (d) => Math.max(0, Math.min(height, d.y)));
+            node.attr("cx", (d) => d.x).attr("cy", (d) => d.y);
 
             label
-                .attr("x", (d) => Math.max(0, Math.min(width, d.x + 10)))
-                .attr("y", (d) => Math.max(0, Math.min(height, d.y + 3)));
+                .attr("x", (d) => d.x)
+                .attr("y", (d) => d.y - 10); // Keep label above node
         }
 
         function dragstarted(event, d) {

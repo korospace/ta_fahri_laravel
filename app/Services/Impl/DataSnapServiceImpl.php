@@ -195,9 +195,12 @@ class DataSnapServiceImpl implements DataSnapService
                 return response()->json(
                     [
                         'message' => 'nodes & edges tidak ditemukan',
-                        'data'    => null
+                        'data'    => [
+                            'nodes' => [],
+                            'edges' => []
+                        ]
                     ],
-                    404
+                    200
                 );
             } else {
                 $fileContent = File::get($filePath);
@@ -225,13 +228,8 @@ class DataSnapServiceImpl implements DataSnapService
             $filePath = database_path($folder . '/' . $fileName);
 
             if (!File::exists($filePath)) {
-                return response()->json(
-                    [
-                        'message' => 'centrality measure tidak ditemukan',
-                        'data'    => null
-                    ],
-                    404
-                );
+                return DataTables::of([])
+                    ->make(true);
             }
 
             // Membaca dan memproses file JSON

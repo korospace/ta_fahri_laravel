@@ -347,6 +347,7 @@ class UploadDataServiceImpl implements UploadDataService
             }
 
             File::put($filePath, json_encode($nodes_edges, JSON_PRETTY_PRINT));
+            $this->generateCentralityMeasure($nodes_edges);
 
             return response()->json(
                 [
