@@ -236,16 +236,25 @@ class DataSnapServiceImpl implements DataSnapService
             $fileContent = File::get($filePath);
             $jsonData    = json_decode($fileContent, true);
 
+            // get list mutual
+            $mutuals = Mutual::all();
+            $arr_username_mutual = [];
+            foreach ($mutuals as $mutual) {
+                $arr_username_mutual[] = $mutual->username;
+            }
+
             // Menyusun data dengan format yang diinginkan
             $nodes = [];
             foreach ($jsonData['degree_centrality'] as $username => $degreeCentrality) {
-                $nodes[] = [
-                    'username' => $username,
-                    'degree_centrality' => number_format($degreeCentrality, 2),
-                    'betweenness_centrality' => number_format($jsonData['betweenness_centrality'][$username] ?? 0, 2),
-                    'closeness_centrality' => number_format($jsonData['closeness_centrality'][$username] ?? 0, 2),
-                    'eigenvector_centrality' => number_format($jsonData['eigenvector_centrality'][$username] ?? 0, 2),
-                ];
+                if (in_array($username, $arr_username_mutual)) {
+                    $nodes[] = [
+                        'username' => $username,
+                        'degree_centrality' => number_format($degreeCentrality, 2),
+                        'betweenness_centrality' => number_format($jsonData['betweenness_centrality'][$username] ?? 0, 2),
+                        'closeness_centrality' => number_format($jsonData['closeness_centrality'][$username] ?? 0, 2),
+                        'eigenvector_centrality' => number_format($jsonData['eigenvector_centrality'][$username] ?? 0, 2),
+                    ];
+                }
             }
 
             // Mengurutkan berdasarkan eigenvector_centrality (desc)

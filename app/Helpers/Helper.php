@@ -179,29 +179,30 @@ function authorizeSite(Request $request, string $siteId) : void
 function buildAdjacencyList(array $nodes, array $edges)
 {
     $graph = [];
-    
-    // Pastikan setiap node memiliki entri dalam graf
-    foreach (array_unique($nodes) as $node) {
+
+    // Initialize an empty adjacency list for each node
+    foreach ($nodes as $node) {
         $graph[$node] = [];
     }
-    
-    // Bangun adjacency list dari edges
+
+    // Build adjacency list from edges
     foreach ($edges as $edge) {
         list($u, $v) = $edge;
-        
-        // Pastikan node ada dalam graf sebelum ditambahkan
+
+        // Ensure both nodes exist in the graph
         if (!isset($graph[$u])) $graph[$u] = [];
         if (!isset($graph[$v])) $graph[$v] = [];
-        
-        // Hindari self-loop yang tidak berguna dalam perhitungan betweenness
+
+        // Avoid self-loops
         if ($u !== $v) {
             $graph[$u][] = $v;
-            $graph[$v][] = $u; // Jika graf tidak berarah
+            $graph[$v][] = $u; // Since it's an undirected graph
         }
     }
-    
+
     return $graph;
 }
+
 
 function calculateDegreeCentrality(array $graph)
 {
@@ -217,29 +218,27 @@ function calculateDegreeCentrality(array $graph)
 
 function calculateBetweennessCentrality(array $nodes, array $edges, array $graph)
 {
-    $betweenness = array_fill_keys($nodes, 0.0);
+    $betweenness = array_fill_keys(array_keys($graph), 0.0); // Use `array_keys($graph)`
 
     foreach ($nodes as $s) {
-        // Inisialisasi struktur data untuk BFS
+        if (!isset($graph[$s])) continue; // Skip missing nodes
+
         $queue = new SplQueue();
         $stack = [];
-        $distance = array_fill_keys($nodes, -1);
-        $sigma = array_fill_keys($nodes, 0);
-        $predecessors = array_fill_keys($nodes, []);
-        
+        $distance = array_fill_keys(array_keys($graph), -1);
+        $sigma = array_fill_keys(array_keys($graph), 0);
+        $predecessors = array_fill_keys(array_keys($graph), []);
+
         $distance[$s] = 0;
         $sigma[$s] = 1;
         $queue->enqueue($s);
 
-        // BFS untuk mencari jalur terpendek dari $s
         while (!$queue->isEmpty()) {
             $v = $queue->dequeue();
             array_push($stack, $v);
 
-            if (!isset($graph[$v])) continue; // Hindari error jika tidak ada dalam graph
-
             foreach ($graph[$v] as $w) {
-                if ($distance[$w] == -1) { // Node baru ditemukan
+                if ($distance[$w] == -1) {
                     $distance[$w] = $distance[$v] + 1;
                     $queue->enqueue($w);
                 }
@@ -251,8 +250,7 @@ function calculateBetweennessCentrality(array $nodes, array $edges, array $graph
             }
         }
 
-        // Akumulasi nilai betweenness
-        $delta = array_fill_keys($nodes, 0.0);
+        $delta = array_fill_keys(array_keys($graph), 0.0);
         while (!empty($stack)) {
             $w = array_pop($stack);
             foreach ($predecessors[$w] as $v) {
@@ -264,7 +262,6 @@ function calculateBetweennessCentrality(array $nodes, array $edges, array $graph
         }
     }
 
-    // Normalisasi untuk graf tidak berarah
     foreach ($betweenness as &$value) {
         $value = number_format($value / 2, 6);
     }
@@ -312,6 +309,7 @@ function calculateClosenessCentrality(array $graph)
 
     return $closeness;
 }
+
 function calculateEigenvectorCentrality(array $graph, $iterations = 100, $tolerance = 1e-6)
 {
     $centrality = [];
