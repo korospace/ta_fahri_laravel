@@ -4,7 +4,9 @@ function scrapeMutualDetail() {
 }
 
 if ($("#tab_mutual_detail_value").val() === "ongoing" || $("#tab_mutual_detail_value").val() === "finish") {
-    fetchMutualDetailList();
+    if ($("#tab_active").val() == "tab_mutual_detail") {
+        fetchMutualDetailList();
+    }
 } else {
     showEmptyMutualDetailTable();
 }

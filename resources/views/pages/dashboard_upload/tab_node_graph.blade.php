@@ -4,7 +4,8 @@
             <button type="button" class="btn btn-secondary btn-sm" onclick="moveTab('tab_mutual_followers')">
                 <i class="fas fa-arrow-left"></i> prev
             </button>
-            <button type="button" class="btn btn-primary btn-sm" {{$dataTab->tab_node_graph == 'finish' ? "onclick=finishProgress()" : 'disabled'}}>
+            <!-- <button type="button" class="btn btn-primary btn-sm" {{$dataTab->tab_node_graph == 'finish' ? "onclick=finishProgress()" : 'disabled'}}> -->
+            <button type="button" class="btn btn-primary btn-sm" {{true ? "onclick=finishProgress()" : 'disabled'}}>
                 finish
             </button>
         </div>

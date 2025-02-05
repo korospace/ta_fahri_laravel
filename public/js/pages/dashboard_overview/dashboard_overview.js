@@ -52,7 +52,7 @@ function fetchNodesEdges() {
         },
         error: function (xhr, status, error) {
             console.log("ERROR scrapeMutualFollowers", error);
-            showToast("gagal mendapatkan nodes & ednges", "danger");
+            showToast("gagal mendapatkan nodes & edges", "danger");
         },
     });
 }

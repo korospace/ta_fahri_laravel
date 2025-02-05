@@ -1,0 +1,14 @@
+{
+    "nodes": [
+        "bagas",
+        "fahri",
+        "gudang",
+        "ruby",
+        "heru"
+    ],
+    "edges": [
+        ["bagas", "fahri"],
+        ["ruby", "heru"],
+        ["fahri", "gudang"]
+    ]
+}

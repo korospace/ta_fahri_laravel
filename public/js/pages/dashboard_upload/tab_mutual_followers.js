@@ -4,7 +4,9 @@ function scrapeMutualFollowers() {
 }
 
 if ($("#tab_mutual_followers_value").val() === "ongoing" || $("#tab_mutual_followers_value").val() === "finish") {
-    fetchMutualListToScraping();
+    if ($("#tab_active").val() == "tab_mutual_followers") {
+        fetchMutualListToScraping();
+    }
 } else {
     showEmptyTable();
 }

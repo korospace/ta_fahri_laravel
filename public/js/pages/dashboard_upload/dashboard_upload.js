@@ -8,6 +8,12 @@ function checkLinkTab(linkTabId) {
     $(`#${linkTabId} i`).addClass('fa-check-circle');
 }
 
+function getActiveTabId() {
+    let activeTab = document.querySelector(".nav-link.active"); // Cari elemen dengan class 'active'
+    
+    return activeTab[0] ? activeTab[0].id : null; // Kembalikan ID jika ditemukan, jika tidak, null
+}
+
 function moveTab(tabName) {
     // Hapus class 'active' dari semua elemen dengan class 'nav-link'
     $('#dashboard-upload-page .nav-link').removeClass('active');
@@ -71,6 +77,9 @@ function updateProgressStatus(status) {
             token: $.cookie("jwt_token"),
         },
         success: function (data) {
+            if (status == "completed") {
+                window.location.href = `${BASE_URL}/dashboard/overview`;
+            }
         },
         error: function (data) {
             showToast("terjadi kesalahan ketika update progress status", "danger");

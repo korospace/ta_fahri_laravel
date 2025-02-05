@@ -1,7 +1,6 @@
 
 function finishProgress() {
     updateProgressStatus('completed')
-    window.location.href = `${BASE_URL}/dashboard/overview`;
 }
 
 function generateNodesEdges() {
@@ -27,7 +26,7 @@ function generateNodesEdges() {
         error: function (xhr, status, error) {
             hideLoadingSpinner();
             console.log("ERROR scrapeMutualFollowers", error);
-            showToast("gagal men-generate nodes & ednges", "danger");
+            showToast("gagal men-generate nodes & edges", "danger");
         },
     });
 }
@@ -48,7 +47,7 @@ function fetchNodesEdges() {
         },
         error: function (xhr, status, error) {
             console.log("ERROR scrapeMutualFollowers", error);
-            showToast("gagal mendapatkan nodes & ednges", "danger");
+            showToast("gagal mendapatkan nodes & edges", "danger");
         },
     });
 }

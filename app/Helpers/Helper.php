@@ -179,16 +179,27 @@ function authorizeSite(Request $request, string $siteId) : void
 function buildAdjacencyList(array $nodes, array $edges)
 {
     $graph = [];
-    foreach ($nodes as $node) {
+    
+    // Pastikan setiap node memiliki entri dalam graf
+    foreach (array_unique($nodes) as $node) {
         $graph[$node] = [];
     }
-
+    
+    // Bangun adjacency list dari edges
     foreach ($edges as $edge) {
-        [$source, $target] = $edge;
-        $graph[$source][] = $target;
-        $graph[$target][] = $source;
+        list($u, $v) = $edge;
+        
+        // Pastikan node ada dalam graf sebelum ditambahkan
+        if (!isset($graph[$u])) $graph[$u] = [];
+        if (!isset($graph[$v])) $graph[$v] = [];
+        
+        // Hindari self-loop yang tidak berguna dalam perhitungan betweenness
+        if ($u !== $v) {
+            $graph[$u][] = $v;
+            $graph[$v][] = $u; // Jika graf tidak berarah
+        }
     }
-
+    
     return $graph;
 }
 
@@ -206,24 +217,101 @@ function calculateDegreeCentrality(array $graph)
 
 function calculateBetweennessCentrality(array $nodes, array $edges, array $graph)
 {
-    // Implementasi betweenness centrality jika dibutuhkan
-    $centrality = [];
-    foreach ($nodes as $node) {
-        $centrality[$node] = 0.0; // Placeholder
+    $betweenness = array_fill_keys($nodes, 0.0);
+
+    foreach ($nodes as $s) {
+        // Inisialisasi struktur data untuk BFS
+        $queue = new SplQueue();
+        $stack = [];
+        $distance = array_fill_keys($nodes, -1);
+        $sigma = array_fill_keys($nodes, 0);
+        $predecessors = array_fill_keys($nodes, []);
+        
+        $distance[$s] = 0;
+        $sigma[$s] = 1;
+        $queue->enqueue($s);
+
+        // BFS untuk mencari jalur terpendek dari $s
+        while (!$queue->isEmpty()) {
+            $v = $queue->dequeue();
+            array_push($stack, $v);
+
+            if (!isset($graph[$v])) continue; // Hindari error jika tidak ada dalam graph
+
+            foreach ($graph[$v] as $w) {
+                if ($distance[$w] == -1) { // Node baru ditemukan
+                    $distance[$w] = $distance[$v] + 1;
+                    $queue->enqueue($w);
+                }
+
+                if ($distance[$w] == $distance[$v] + 1) {
+                    $sigma[$w] += $sigma[$v];
+                    $predecessors[$w][] = $v;
+                }
+            }
+        }
+
+        // Akumulasi nilai betweenness
+        $delta = array_fill_keys($nodes, 0.0);
+        while (!empty($stack)) {
+            $w = array_pop($stack);
+            foreach ($predecessors[$w] as $v) {
+                $delta[$v] += ($sigma[$v] / $sigma[$w]) * (1 + $delta[$w]);
+            }
+            if ($w != $s) {
+                $betweenness[$w] += $delta[$w];
+            }
+        }
     }
-    return $centrality;
+
+    // Normalisasi untuk graf tidak berarah
+    foreach ($betweenness as &$value) {
+        $value = number_format($value / 2, 6);
+    }
+
+    return $betweenness;
 }
 
 function calculateClosenessCentrality(array $graph)
 {
-    // Implementasi closeness centrality
-    $centrality = [];
-    foreach ($graph as $node => $neighbors) {
-        $centrality[$node] = 0.0; // Placeholder
-    }
-    return $centrality;
-}
+    $closeness = [];
+    $nodes = array_keys($graph);
+    $n = count($nodes);
 
+    foreach ($nodes as $node) {
+        $distances = [];
+        $queue = new SplQueue();
+        $visited = array_fill_keys($nodes, false);
+
+        $queue->enqueue([$node, 0]);
+        $visited[$node] = true;
+
+        // BFS untuk menghitung jarak terpendek
+        while (!$queue->isEmpty()) {
+            list($current, $d) = $queue->dequeue();
+            $distances[$current] = $d;
+
+            foreach ($graph[$current] as $neighbor) {
+                if (!$visited[$neighbor]) {
+                    $visited[$neighbor] = true;
+                    $queue->enqueue([$neighbor, $d + 1]);
+                }
+            }
+        }
+
+        // Hitung total jarak
+        $totalDistance = array_sum($distances);
+
+        // Closeness = (n-1) / total_jarak (jika graf terhubung)
+        if ($totalDistance > 0) {
+            $closeness[$node] = number_format(($n - 1) / $totalDistance, 6);
+        } else {
+            $closeness[$node] = 0.0;
+        }
+    }
+
+    return $closeness;
+}
 function calculateEigenvectorCentrality(array $graph, $iterations = 100, $tolerance = 1e-6)
 {
     $centrality = [];

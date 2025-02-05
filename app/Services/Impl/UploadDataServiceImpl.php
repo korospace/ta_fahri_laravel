@@ -100,6 +100,10 @@ class UploadDataServiceImpl implements UploadDataService
 
             ProgressUpload::where("id", 1)->update($arrUpate);
 
+            if ($request->progress_status == "completed") {
+                $this->generateCentralityMeasure();
+            }
+
             return response()->json(
                 [
                     'message' => 'status progress berhasil diupdate',
@@ -246,8 +250,8 @@ class UploadDataServiceImpl implements UploadDataService
             $mutual = Mutual::where('username', $username)->first();
             MutualFollowers::where('mutual_id', $mutual->id)->delete();
 
-            $rules  = $mutual->posts >= 6 && ($mutual->followers >= 3500 && $mutual->followers <= 9000) && $mutual->followers > $mutual->following && $mutual->is_private == 0;
-            $rules  = $mutual->followers != null && $mutual->followers > 0;
+            $rules  = $mutual->posts >= 6 && ($mutual->followers >= 3000 && $mutual->followers <= 9000) && $mutual->followers > $mutual->following && $mutual->is_private == 0;
+            // $rules  = $mutual->followers != null && $mutual->followers > 0;
             // $rules  = true;
 
             if ($rules == false) {
@@ -322,8 +326,8 @@ class UploadDataServiceImpl implements UploadDataService
             // create nodes
             $listMutual = Mutual::where("is_followers_scraped", 1)->get();
             foreach ($listMutual as $mutual) {
-                $rules  = $mutual->posts >= 6 && ($mutual->followers >= 3500 && $mutual->followers <= 9000) && $mutual->followers > $mutual->following && $mutual->is_private == 0;
-                $rules  = $mutual->followers != null && $mutual->followers > 0;
+                $rules  = $mutual->posts >= 6 && ($mutual->followers >= 3000 && $mutual->followers <= 9000) && $mutual->followers > $mutual->following && $mutual->is_private == 0;
+                // $rules  = $mutual->followers != null && $mutual->followers > 0;
                 // $rules  = true;
 
                 if ($rules) {
@@ -361,14 +365,32 @@ class UploadDataServiceImpl implements UploadDataService
         }
     }
 
-    public function generateCentralityMeasure($jsonData)
+    public function generateCentralityMeasure($jsonData = null)
     {
         try {
-            $graph = buildAdjacencyList($jsonData['nodes'], $jsonData['edges']);
+            if ($jsonData == null) {
+                $folder      = "data"; // folder: database/data
+                $fileName    = "nodes_edges.json";
+                $filePath    = database_path($folder . '/' . $fileName);
+                $fileContent = File::get($filePath);
+                $jsonData    = json_decode($fileContent, true);
+            }
 
+            $nodes = null;
+            $edges = null;
+            if (env("LIMIT_NODES_EDGES") == "Y") {
+                $nodes = array_slice($jsonData['nodes'], 0, 10);
+                // $edges = array_slice($jsonData['edges'], 0, 100);
+                $edges = $jsonData['edges'];
+            } else {
+                $nodes = $jsonData['nodes'];
+                $edges = $jsonData['edges'];
+            }
+            
+            $graph = buildAdjacencyList($nodes, $edges);
             // Calculate centrality measures
             $degreeCentrality       = calculateDegreeCentrality($graph);
-            $betweennessCentrality  = calculateBetweennessCentrality($jsonData['nodes'], $jsonData['edges'], $graph);
+            $betweennessCentrality  = calculateBetweennessCentrality($nodes, $edges, $graph);
             $closenessCentrality    = calculateClosenessCentrality($graph);
             $eigenvectorCentrality  = calculateEigenvectorCentrality($graph);
 

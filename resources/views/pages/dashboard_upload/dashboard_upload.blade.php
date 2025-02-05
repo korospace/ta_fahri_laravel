@@ -19,6 +19,8 @@
 		<div class="container-fluid">
             <div class="row px-2">
                 <div class="col">
+                    <input type="hidden" id="tab_mutual_detail_value" value="{{ $dataTab->tab_active }}">
+
                     <div class="card card-secondary card-outline card-tabs">
                         <div class="card-header p-0 pt-1 border-bottom-0">
                             <ul class="nav nav-tabs">
@@ -49,7 +51,7 @@
                                 <li class="nav-item">
                                     <a class="nav-link disabled {{$dataTab->tab_active == 'tab_node_graph' ? 'active' : ''}}" id="linktab_node_graph" data-toggle="pill" href="#tab_node_graph" role="tab">
                                         <i class="far {{$dataTab->tab_node_graph == 'finish' ? 'fa-check-circle' : 'fa-circle'}}"></i>
-                                        Node & Graph
+                                        Node & Edge
                                     </a>
                                 </li>
                             </ul>
